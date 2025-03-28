@@ -1,0 +1,30 @@
+{
+  "server": {
+    "name": "claude-mcp-server",
+    "version": "1.0.0",
+    "port": 3001
+  },
+  "features": {
+    "dadJokes": true,
+    "chat": true,
+    "fileOperations": true,
+    "desktopCommands": true
+  },
+  "monitoring": {
+    "memoryCheck": true,
+    "memoryCheckInterval": 60000,
+    "errorLogging": true,
+    "logPath": "./logs",
+    "notifyAdmin": true,
+    "adminEmail": "admin@example.com"
+  },
+  "security": {
+    "allowedCommands": ["dir", "type", "echo", "mkdir", "rmdir", "del", "copy", "move", "Get-Date", "Set-Date", "Write-Output", "Get-Content", "Get-ChildItem", "powershell", "*"],
+    "blockedCommands": ["format", "shutdown", "taskkill"],
+    "maxCommandLength": 1000
+  },
+  "fileOperations": {
+    "allowedPaths": ["C:/Users/prelude/Desktop", "C:/Users/prelude/Documents"],
+    "maxFileSize": 10485760
+  }
+}
