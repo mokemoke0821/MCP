@@ -1,0 +1,94 @@
+// Enhanced MCP Server for Claude (第3フェーズ対応版)
+const http = require('http');
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const { exec } = require('child_process');
+const os = require('os');
+
+// 拡張MCPモジュールのインポート
+const enhancedMcp = require('../../Desktop/enhanced-mcp');
+
+// サーバー初期化前に拡張機能を初期化
+const mcpTools = enhancedMcp.initEnhancedMCPServer();
+
+// クロスプラットフォーム対応モジュールのインポート
+const platformInfo = require('./platform-detect');
+const crossPlatformPath = require('./cross-platform-path');
+const configTransformer = require('./config-transform');
+const CrossPlatformIntegration = require('./cross-platform-integration');
+
+// Load configuration
+const CONFIG_PATH = path.join(__dirname, 'config.json');
+let config;
+
+try {
+  // 設定ファイルを読み込み、クロスプラットフォーム対応のために変換
+  const configFile = fs.readFileSync(CONFIG_PATH, 'utf8');
+  const rawConfig = JSON.parse(configFile);
+  
+  // 設定を変換
+  if (rawConfig.features && rawConfig.features.crossPlatform) {
+    config = configTransformer.transformConfig(rawConfig);
+    console.log('Configuration loaded and transformed successfully');
+  } else {
+    config = rawConfig;
+    console.log('Configuration loaded successfully');
+  }
+} catch (error) {
+  console.error('Error loading configuration:', error.message);
+  config = {
+    server: { name: "claude-mcp-server", version: "1.0.0", port: 3001 },
+    features: { dadJokes: true, chat: true, fileOperations: true, desktopCommands: true },
+    monitoring: {
+      memoryCheck: true, memoryCheckInterval: 60000, errorLogging: true,
+      logPath: "./logs", notifyAdmin: true, adminEmail: "admin@example.com"
+    },
+    security: {
+      allowedCommands: ["dir", "type", "echo", "mkdir", "rmdir", "del", "copy", "move"],
+      blockedCommands: ["format", "shutdown", "taskkill"],
+      maxCommandLength: 1000
+    },
+    fileOperations: {
+      allowedPaths: ["C:/Users/prelude/Desktop", "C:/Users/prelude/Documents"],
+      maxFileSize: 10485760
+    }
+  };
+}
+
+// Setup logging
+const logDir = path.resolve(config.monitoring.logPath || "./logs");
+if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+
+const logFilePath = path.join(logDir, `server-${new Date().toISOString().split('T')[0]}.log`);
+const errorFilePath = path.join(logDir, `error-${new Date().toISOString().split('T')[0]}.log`);
+const logStream = fs.createWriteStream(logFilePath, { flags: 'a' });
+const errorStream = fs.createWriteStream(errorFilePath, { flags: 'a' });
+
+// Custom logger
+const logger = {
+  info: (message) => {
+    const logEntry = `[${new Date().toISOString()}] INFO: ${message}\n`;
+    console.log(message); logStream.write(logEntry);
+  },
+  error: (message, error) => {
+    const errorDetail = error ? `\n${error.stack || error}` : '';
+    const logEntry = `[${new Date().toISOString()}] ERROR: ${message}${errorDetail}\n`;
+    console.error(message); errorStream.write(logEntry); logStream.write(logEntry);
+  }
+};
+
+// Helper functions for file operations
+const fileHelpers = {
+  isPathAllowed: (filePath) => {
+    const normalizedPath = crossPlatformPath.normalize(filePath);
+    return config.fileOperations.allowedPaths.some(allowedPath => 
+      normalizedPath.startsWith(crossPlatformPath.normalize(allowedPath)));
+  },
+  validateFilePath: (filePath) => {
+    if (!fileHelpers.isPathAllowed(filePath)) {
+      throw new Error(`Access denied: ${filePath} is not in an allowed directory`);
+    }
+    return crossPlatformPath.normalize(filePath);
+  }
+};

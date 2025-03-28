@@ -8,10 +8,7 @@
     "dadJokes": true,
     "chat": true,
     "fileOperations": true,
-    "desktopCommands": true,
-    "think": true,
-    "search": true,
-    "crossPlatform": true
+    "desktopCommands": true
   },
   "monitoring": {
     "memoryCheck": true,
@@ -29,20 +26,5 @@
   "fileOperations": {
     "allowedPaths": ["C:/Users/prelude/Desktop", "C:/Users/prelude/Documents"],
     "maxFileSize": 10485760
-  },
-  "windows": {
-    "fileOperations": {
-      "allowedPaths": ["C:/Users/prelude/Desktop", "C:/Users/prelude/Documents"]
-    }
-  },
-  "darwin": {
-    "fileOperations": {
-      "allowedPaths": ["~/Desktop", "~/Documents"]
-    }
-  },
-  "linux": {
-    "fileOperations": {
-      "allowedPaths": ["~/Desktop", "~/Documents"]
-    }
   }
 }
